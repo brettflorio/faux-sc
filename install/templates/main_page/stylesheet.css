@@ -1,0 +1,137 @@
+/*
+  $Id: stylesheet.css 1739 2007-12-20 00:52:16Z hpdl $
+
+  osCommerce, Open Source E-Commerce Solutions
+  http://www.oscommerce.com
+
+  Copyright (c) 2007 osCommerce
+
+  Released under the GNU General Public License
+*/
+
+body {
+  margin: 20px;
+  background: #FFFFFF;
+  font-family: Verdana, Arial, sans-serif;
+  font-size: 11px;
+  color: #000000;
+  line-height: 1.5;
+}
+
+#pageHeader {
+  background: #f7f7f5;
+  border: 1px #b3b6b0 solid;
+}
+
+#pageContent {
+  margin-top: 15px;
+}
+
+#pageFooter {
+  clear: both;
+  text-align: center;
+  margin-top: 30px;
+}
+
+.mainBlock {
+  background: #dfecf8;
+  padding: 10px 20px 10px 20px;
+}
+
+.contentBlock {
+  padding: 15px 15px 15px 0px;
+}
+
+.infoPane {
+  float: left;
+  width: 250px;
+  background: #e7ffe7;
+  border: 1px #6da96d solid;
+}
+
+.infoPaneContents {
+  padding: 0px 10px 10px 10px;
+}
+
+.contentPane {
+  margin-left: 270px;
+}
+
+h1 {
+  font-size: 20px;
+  margin-top: 0px;
+}
+
+h2 {
+  font-size: 16px;
+  margin-top: 0px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+h3 {
+  font-size: 12px;
+  margin-top: 0px;
+}
+
+.infoPane h3 {
+  background: #6da96d;
+  color: #ffffff;
+  padding: 5px 10px 5px 10px;
+}
+
+.stepsBox {
+  float: right;
+  background: #f0f6fc;
+  border: 1px #ffffff solid;
+  padding: 10px 15px 10px 0px;
+  margin-right: -5px;
+}
+
+.stepsBox ol {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+#mBox {
+  float: left;
+  clear: both;
+  margin-top: 10px;
+  visibility: hidden;
+  display: none;
+}
+
+#mBoxContents {
+  width: 230px;
+  background: #ffedd1;
+  border: 1px #f0a42a solid;
+  padding: 10px;
+}
+
+.noticeBox {
+  background: #FFD6D3;
+  border: 1px #FF958C solid;
+  padding: 10px;
+}
+
+#pageHeader A:link, #pageHeader A:visited { color: #000000; text-decoration: none; }
+#pageHeader A:hover { color: #000000; text-decoration: underline; }
+
+.inputForm {
+  background-color: #e7ebf5;
+  border: 1px #d0d7e8 solid;
+}
+
+.inputField {
+  font-weight: bold;
+  width: 40%;
+}
+
+.inputDescription {
+  background-color: #f5f7fc;
+  width: 60%;
+}
+
+input.text { font: 8pt verdana, arial, helvetica; color: #000000; width: 95%; }
+
+A:link, A:visited { color: #0029A3; text-decoration: none; }
+A:hover { color: #5D59ac; text-decoration: underline; }
