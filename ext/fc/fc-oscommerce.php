@@ -1,6 +1,7 @@
 <?php
 require_once 'class.rc4crypt.php';
 require_once 'class.xmlparser.php';
+require_once 'oscommerce.class.php';
 
 
 $key = 'CHANGE THIS TEXT to your own datafeed keyphrase';
@@ -59,9 +60,9 @@ class FoxydataUtils {
    *  to an array mapping the equivalent osCommerce customer keys to the customer
    *  field values.
    *
-   *  @see $customer_field_mapping
+   *  @see $CustomerFieldMap
    */
-  function mapCustomerToDB($osc, $customer_fields) {
+  function mapCustomerToDB($customer_fields) {
     $rtn = array();
 
     foreach (FoxydataUtils::$CustomerFieldMap as $feed_field => $db_field)
@@ -89,15 +90,15 @@ class FoxydataUtils {
     $rtn = array();
 
     foreach (FoxydataUtils::$CustomerAddressFieldMap as $feed_field => $db_field)
-      $rtn[$db_field] = $address_fields[$feed_field];
+      $rtn[$prefix.$db_field] = $address_fields[$feed_field];
 
-    $country = $this->osc->lookupCountryByCode($address_fields['country']);
-    $rtn['entry_country_id'] = $country['country_id'];
+    $country = $this->osc->findCountryByCode($address_fields['country']);
+    $rtn[$prefix.'country_id'] = $country['countries_id'];
 
-    $zone = $this->osc->lookupZoneByNameAndCountryID(
-     $address_fields['state'], $rtn['entry_country_id']);
+    $zone = $this->osc->findZoneByNameAndCountryID(
+     $address_fields['state'], $rtn[$prefix.'country_id']);
 
-    $rtn['entry_zone_id'] = $zone['zone_id'];
+    $rtn[$prefix.'zone_id'] = $zone['zone_id'];
 
     return $rtn;
   }
@@ -110,7 +111,6 @@ $FoxyData = $decryptor->decrypt($key, urldecode($_POST["FoxyData"]));
 
 $data = new XMLParser($FoxyData);   // Parse that XML.
 $data->Parse();
-
 /**
  * Wrapper class to make retrieving name / value pairs from an XML feed much
  *  more concise.  Create with an XMLTag (the result of parsing an XML
@@ -126,7 +126,9 @@ class PropertyWrapper {
 
     if (isset($this->data->$field)) {
       $propertyNode = $this->data->$field;
-      $rtn = $propertyNode[0]->tagData;
+      if (count($propertyNode[0]->tagChildren) == 0) {
+        $rtn = $propertyNode[0]->tagData;
+      }
     }
 
     return $rtn;
@@ -138,14 +140,14 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
   $trans = new PropertyWrapper($tx);
   $customer_fields = array();
 
-  foreach ($customer_field_mapping as $feed_field => $db_field) {
+  foreach (FoxyDataUtils::$CustomerFieldMap as $feed_field => $db_field) {
     $customer_fields[$feed_field] = $trans->$feed_field;
   }
 
   $customer_billing_address = array();
   $customer_shipping_address = array();
 
-  foreach ($customer_address_field_mapping as $feed_field => $db_field) {
+  foreach (FoxyDataUtils::$CustomerAddressFieldMap as $feed_field => $db_field) {
     $billing_field = 'customer_'.$feed_field;
     $shipping_field = 'shipping_'.$feed_field;
 
@@ -176,14 +178,21 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
     OSCommerce::ORDER_SHIPPING));
 
   $order->setPaymentMethod('foxycart');
+  $order->setDatePurchased($trans->transaction_date);
 
-  foreach ($tx->custom_fields[0]->custom_field as $field) {
+  $order->setProducts($osc->loadCartForCustomer($customer));
+
+  foreach ($tx->custom_fields[0]->custom_field as $customField) {
+    $fieldName = $customField->custom_field_name[0]->tagData;
+    $fieldValue = $customField->custom_field_value[0]->tagData;
+
+    if ($fieldName == 'Comment') {
+      $order->setComment($fieldValue);
+    }
   }
 
-
-  // orders -> orders_products -> orders_products_attributes
-
-  $osc->torchCustomerBasket($customer);   // Burn the baskets, we don't need 'em.
+  $order->saveToDB();
+  $osc->torchCartForCustomer($customer);   // Burn the baskets, we don't need 'em.
 }
 
 print "foxy";

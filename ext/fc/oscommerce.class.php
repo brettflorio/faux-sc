@@ -3,11 +3,7 @@ define('OSC_INCLUDES_PATH', '../../');
 ini_set('include_path', ini_get('include_path') . ':' . OSC_INCLUDES_PATH);
 
 require_once(OSC_INCLUDES_PATH . 'includes/configure.php');
-require(DIR_WS_FUNCTIONS . 'general.php');
-require(DIR_WS_FUNCTIONS . 'database.php');
-require(DIR_WS_INCLUDES . 'database_tables.php');
-
-tep_db_connect() or die('Unable to connect to database server!');
+require_once(OSC_INCLUDES_PATH . 'includes/application_top.php');
 
 
 /**
@@ -21,6 +17,13 @@ class OSCommerce {
   const ORDER_CUSTOMER = 'customer_';
   const ORDER_BILLING = 'billing_';
   const ORDER_SHIPPING = 'delivery_';
+
+/**
+ * osC customer fields.
+ */
+  public static $CustomerFields = array('customers_email_address',
+    'customers_firstname', 'customers_lastname',
+   'customers_telephone', 'customers_password');
 
   protected static $instance = null;
 
@@ -41,9 +44,9 @@ class OSCommerce {
     return new OSCommerce_Order($this, $customer);
   }
 
-  public function findCustomer($customer_email) {
+  public function findCustomer($customerEmail) {
     $result = tep_db_query('SELECT * FROM ' . TABLE_CUSTOMERS .
-      ' WHERE customers_email_address = "'.tep_db_prepare_input($customer_email).'"');
+      ' WHERE customers_email_address = "'.tep_db_prepare_input($customerEmail).'"');
 
     return (tep_db_num_rows($result) > 0) ? tep_db_fetch_array($result) : null;
   }
@@ -75,14 +78,15 @@ class OSCommerce {
     foreach ($customerFields as $field => $value)
       $customer[$field] = $value;
 
-    tep_db_perform(TABLE_CUSTOMERS, $customer, 'UPDATE');
+    tep_db_perform(TABLE_CUSTOMERS, $customer, 'update',
+     'customers_id = "' . tep_db_input($customer['customers_id']) . '"');
   }
 
   public function updateCustomerAddresses($billing, $shipping) {
-    die('not happening: address update not implemented.');
+    print ('not happening: address update not implemented.');
   }
 
-  public function lookupCountryByCode($name) {
+  public function findCountryByCode($name) {
     $result = tep_db_query('SELECT * FROM ' . TABLE_COUNTRIES .
      ' WHERE countries_iso_code_2 = "' . tep_db_input($name) . '"');
     $country = tep_db_fetch_array($result);
@@ -90,15 +94,15 @@ class OSCommerce {
     return $country;
   }
 
-  public function lookupCountryByID($id) {
+  public function findCountryByID($id) {
     $result = tep_db_query('SELECT * FROM ' . TABLE_COUNTRIES .
-     ' WHERE id = "' . tep_db_input($id) . '"');
+     ' WHERE countries_id = "' . tep_db_input($id) . '"');
     $country = tep_db_fetch_array($result);
 
     return $country;
   }
 
-  public function lookupZoneByNameAndCode($name, $country_id) {
+  public function findZoneByNameAndCountryID($name, $country_id) {
     $result = tep_db_query('SELECT * FROM ' . TABLE_ZONES . ' ' .
      'WHERE zone_code = "' . tep_db_input($name) . '" AND '.
      'zone_country_id = "' . tep_db_input($country_id) . '"');
@@ -106,9 +110,42 @@ class OSCommerce {
 
     return $zone;
   }
+
+  /**
+   * Creates a hash of a given customer's stored cart in osCommerce.  Returns a hash
+   * of the products in a customer's cart structured as follows:
+   *
+   * Given $productsID, the unique key of a product in the cart, and 
+   *  $productsOptionsID the ID of an option of that product:
+   *
+   * $cart[$productsID]['qty'] // the quantity of that product in the cart
+   * $cart[$productsID]['attributes'] // if set, that product's attributes
+   * $cart[$productsID]['attributes'][$productsOptionsID] // \
+   *                                  // the value of the selected product option
+   *  
+   */
+  public function loadCartForCustomer($customer) {
+    $customerID = $customer['customers_id'];
+    $cart = array();
+
+    $productsQuery = tep_db_query("select products_id, customers_basket_quantity from " . TABLE_CUSTOMERS_BASKET . " where customers_id = '" . (int)$customerID . "'");
+    while ($products = tep_db_fetch_array($productsQuery)) {
+      $cart[$products['products_id']] =
+        array('qty' => $products['customers_basket_quantity']);
+
+      $attributesQuery = tep_db_query("select products_options_id, products_options_value_id from " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . " where customers_id = '" . (int)$customerID . "' and products_id = '" . tep_db_input($products['products_id']) . "'");
+      while ($attributes = tep_db_fetch_array($attributesQuery)) {
+        $cart[$products['products_id']]['attributes'][$attributes['products_options_id']] = $attributes['products_options_value_id'];
+      }
+    }
+
+    return $cart;
+  }
 }
 
 class OSCommerce_Order {
+  const NEW_RECORD = -1;
+
   protected static $addressToOrderFieldMapping = array(
    'customers_name' => 'entry_firstname + entry_lastname',  // Must calc value.
    'customers_company' => 'entry_company',
@@ -124,20 +161,37 @@ class OSCommerce_Order {
  );
 
   protected $fields = array();
+  protected $products = array();
 
   public function __construct($osc, $customer) {
-    global $customer_field_mapping;
+    global $currencies;
 
-    $this->fields['customers_id'] = $customer['customer_id'];
+    $this->osc = $osc;
 
-    foreach ($customer_field_mapping as $feedField => $dbField)
-      $this->fields[$dbField] = $customer[$dbField];
+    $this->fields['orders_id'] = OSCommerce_Order::NEW_RECORD;
+    $this->fields['customers_id'] = $customer['customers_id'];
+
+    foreach (OSCommerce::$CustomerFields as $fields)
+      $this->fields[$fields] = $customer[$fields];
 
     $this->fields['customers_name'] =
      $customer['customers_firstname'] . ' ' . $customer['customers_lastname'];
 
     unset($this->fields['customers_firstname']);
     unset($this->fields['customers_lastname']);
+
+    $this->fields['orders_status'] = DEFAULT_ORDERS_STATUS_ID;
+    $this->fields['currency'] = DEFAULT_CURRENCY;
+    $this->fields['currency_value'] =
+     $currencies->currencies[DEFAULT_CURRENCY]['value'];
+    $this->fields['cc_type'] = '';
+    $this->fields['cc_owner'] = '';
+    $this->fields['cc_number'] = '';
+    $this->fields['cc_expires'] = '';
+
+    $this->fields['subtotal'] = 0;
+    $this->fields['tax'] = 0;
+    $this->fields['comments'] = '';
   }
 
   public function setCustomerAddress($address) {
@@ -151,16 +205,24 @@ class OSCommerce_Order {
   }
 
   protected function setAddress($address, $prefix=OSCommerce::ORDER_CUSTOMER) {
+    global $currencies;
+
     foreach ($address as $addressField => $value)
       $this->fields[$addressField] = $value;
 
-    unset($this->fields[$prefix.'country_id']);
+    $this->fields[$prefix.'name'] =
+     "{$this->fields[$prefix.'firstname']} {$this->fields[$prefix.'lastname']}";
 
-    $country_id = $address[$prefix.'_country_id'];
+    unset($this->fields[$prefix.'firstname']);
+    unset($this->fields[$prefix.'lastname']);
+
+    $country_id = $address[$prefix.'country_id'];
     $country = $this->osc->findCountryByID($country_id);
 
-    $this->fields[$prefix.'_country'] = $country['country_name'];
-    $this->fields[$prefix.'_address_format_id'] = $country['address_format_id'];
+    $this->fields[$prefix.'country'] = $country['countries_name'];
+    $this->fields[$prefix.'address_format_id'] = $country['address_format_id'];
+
+    unset($this->fields[$prefix.'country_id']);
   }
 
   protected function __call($name, $args) {
@@ -170,13 +232,26 @@ class OSCommerce_Order {
       $op = substr($name, 0, strlen('get'));
       $fieldName = substr($name, strlen('get'));
 
-      $fieldName = preg_replace('/[a-z]([A-Z])+/', '$1_$2', $fieldName);
+      $fieldName = preg_replace('/([a-z])([A-Z])+/', '$1_$2', $fieldName);
       $fieldName = strtolower($fieldName);
 
       if ($op == 'get')
         return $this->fields[$fieldName];
-      else
+      else if ($op == 'set')
         $this->fields[$fieldName] = $args[0];
+      else
+        throw new Exception('method not found: ' . $name);
+    }
+  }
+
+  public function setProducts($products) { $this->products = $products; }
+
+  public function saveToDB() {
+    if ($this->fields['orders_id'] == OSCommerce_Order::NEW_RECORD) {
+      tep_db_perform(TABLE_ORDERS, $this->orders);
+    }
+    else {
+      throw new Exception("not happening: order update not implemented.");
     }
   }
 }

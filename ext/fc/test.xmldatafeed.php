@@ -59,12 +59,8 @@ $XMLOutput = <<<XML
 			<customer_password>1aab23051b24582c5dc8e23fc595d505</customer_password>
 			<custom_fields>
 				<custom_field>
-					<custom_field_name>My_Cool_Text</custom_field_name>
-					<custom_field_value>Value123</custom_field_value>
-				</custom_field>
-				<custom_field>
-					<custom_field_name>Subscribe</custom_field_name>
-					<custom_field_value>yes</custom_field_value>
+					<custom_field_name>Comment</custom_field_name>
+					<custom_field_value>My order comment.</custom_field_value>
 				</custom_field>
 			</custom_fields>
 			<transaction_details>
