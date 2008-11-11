@@ -17,10 +17,10 @@ tep_db_connect() or die('Unable to connect to database server!');
  *  require statements at the top of this file.
  */
 class OSCommerce {
-  public const ADDRESS_BOOK = 'entry_';
-  public const ORDER_CUSTOMER = 'customer_';
-  public const ORDER_BILLING = 'billing_';
-  public const ORDER_SHIPPING = 'shipping_';
+  const ADDRESS_BOOK = 'entry_';
+  const ORDER_CUSTOMER = 'customer_';
+  const ORDER_BILLING = 'billing_';
+  const ORDER_SHIPPING = 'shipping_';
 
   protected static $instance = null;
 
@@ -38,7 +38,7 @@ class OSCommerce {
 
 
   public function createOrderForCustomer($customer) {
-    return new OSCommerce_Order($customer);
+    return new OSCommerce_Order($this, $customer);
   }
 
   public function findCustomer($customer_email) {
@@ -125,7 +125,7 @@ class OSCommerce_Order {
 
   protected $fields = array();
 
-  public function __construct($customer) {
+  public function __construct($osc, $customer) {
     global $customer_field_mapping;
 
     $this->fields['customers_id'] = $customer['customer_id'];
@@ -141,31 +141,27 @@ class OSCommerce_Order {
   }
 
   public function setCustomerAddress($address) {
+    $this->setAddress($address, OSCommerce::ORDER_CUSTOMER);
+  }
+  public function setBillingAddress($address) {
+    $this->setAddress($address, OSCommerce::ORDER_BILLING);
+  }
+  public function setShippingAddress($address) {
+    $this->setAddress($address, OSCommerce::ORDER_SHIPPING);
   }
 
-  protected function setAddress($address, $prefix=OSCommerce::CUSTOMER) {
-    global $customer_address_field_mapping;
+  protected function setAddress($address, $prefix=OSCommerce::ORDER_CUSTOMER) {
+    foreach ($address as $addressField => $value)
+      $this->fields[$addressField] = $value;
 
-    foreach ($customer_address_field_mapping as $feedField => $dbField) {
-      $this->fields[$prefix.$dbField] = $address[$dbField];
-    }
+    unset($this->fields[$prefix.'country_id']);
+
+    $country_id = $address[$prefix.'_country_id'];
+    $country = $this->osc->findCountryByID($country_id);
+
+    $this->fields[$prefix.'_country'] = $country['country_name'];
+    $this->fields[$prefix.'_address_format_id'] = $country['address_format_id'];
   }
-
-//  public function setAddress($order, $field_prefix, $address) {
-//    $billingFields = array('customers_company' => $billingAddress['entry_company'],
-//     'customers_street_address' => $billingAddress['entry_street_address'],
-//     'customers_suburb' => $billingAddress['entry_suburb'],
-//     'customers_city' => $billingAddress['entry_city'],
-//     'customers_postcode' => $billingAddress['entry_postcode'], 
-//     'customers_state' => $billingAddress['entry_state'], 
-//     'customers_country' => $billingAddress['entry_country_id']['title'], 
-//     'customers_telephone' => $billingAddress['telephone'], 
-//     'customers_email_address' => $billingAddress['email_address'],
-//     'customers_address_format_id' => $billingAddress['format_id'], );
-//
-//    foreach ($billingFields as $field => $value)
-//      $order[$field] = $value;
-//  }
 }
 
 ?>

@@ -21,8 +21,9 @@ $osc = OSCommerce::instance();
  *  to osCommerce.
  */
 class FoxydataUtils {
-  **
-   *
+  /**
+   * @param $osc    An instance of an OSCommerce class; used for doing
+   *                address zone and country code lookups.
    */
   public function __construct($osc) {
     $this->osc = $osc;
@@ -166,12 +167,21 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
 
   $customer = $osc->findCustomer($customer_fields['customer_email']);
 
+  $order = $osc->createOrderForCustomer($customer);
+  $order->setCustomerAddress($utils->mapAddressToDB($customer_billing_address,
+    OSCommerce::ORDER_CUSTOMER));
+  $order->setBillingAddress($utils->mapAddressToDB($customer_billing_address,
+    OSCommerce::ORDER_BILLING));
+  $order->setShippingAddress($utils->mapAddressToDB($customer_shipping_address,
+    OSCommerce::ORDER_SHIPPING));
+
   foreach ($tx->custom_fields[0]->custom_field as $field) {
   }
 
+
   // orders -> orders_products -> orders_products_attributes
 
-  $osc->torchCustomerBaskets($customer['customer_id']);   // Burn the baskets, we don't need 'em.
+  $osc->torchCustomerBasket($customer);   // Burn the baskets, we don't need 'em.
 }
 
 print "foxy";
