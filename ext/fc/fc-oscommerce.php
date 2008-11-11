@@ -175,6 +175,8 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
   $order->setShippingAddress($utils->mapAddressToDB($customer_shipping_address,
     OSCommerce::ORDER_SHIPPING));
 
+  $order->setPaymentMethod('foxycart');
+
   foreach ($tx->custom_fields[0]->custom_field as $field) {
   }
 

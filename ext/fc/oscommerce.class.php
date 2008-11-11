@@ -20,7 +20,7 @@ class OSCommerce {
   const ADDRESS_BOOK = 'entry_';
   const ORDER_CUSTOMER = 'customer_';
   const ORDER_BILLING = 'billing_';
-  const ORDER_SHIPPING = 'shipping_';
+  const ORDER_SHIPPING = 'delivery_';
 
   protected static $instance = null;
 
@@ -161,6 +161,23 @@ class OSCommerce_Order {
 
     $this->fields[$prefix.'_country'] = $country['country_name'];
     $this->fields[$prefix.'_address_format_id'] = $country['address_format_id'];
+  }
+
+  protected function __call($name, $args) {
+    if (method_exists($this, $name))
+      return call_user_func(array($this, $name), $args);
+    else if (strpos($name, 'get') == 0 || strpos($name, 'set') == 0) {
+      $op = substr($name, 0, strlen('get'));
+      $fieldName = substr($name, strlen('get'));
+
+      $fieldName = preg_replace('/[a-z]([A-Z])+/', '$1_$2', $fieldName);
+      $fieldName = strtolower($fieldName);
+
+      if ($op == 'get')
+        return $this->fields[$fieldName];
+      else
+        $this->fields[$fieldName] = $args[0];
+    }
   }
 }
 
