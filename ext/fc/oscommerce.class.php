@@ -5,6 +5,8 @@ ini_set('include_path', ini_get('include_path') . ':' . OSC_INCLUDES_PATH);
 require_once(OSC_INCLUDES_PATH . 'includes/configure.php');
 require_once(OSC_INCLUDES_PATH . 'includes/application_top.php');
 
+define('DEFAULT_LANGUAGE_ID', '1');
+
 
 /**
  * Contains actions and routines for interacting with an osCommerce installation
@@ -14,7 +16,7 @@ require_once(OSC_INCLUDES_PATH . 'includes/application_top.php');
  */
 class OSCommerce {
   const ADDRESS_BOOK = 'entry_';
-  const ORDER_CUSTOMER = 'customer_';
+  const ORDER_CUSTOMER = 'customers_';
   const ORDER_BILLING = 'billing_';
   const ORDER_SHIPPING = 'delivery_';
 
@@ -129,6 +131,7 @@ class OSCommerce {
     $cart = array();
 
     $productsQuery = tep_db_query("select products_id, customers_basket_quantity from " . TABLE_CUSTOMERS_BASKET . " where customers_id = '" . (int)$customerID . "'");
+
     while ($products = tep_db_fetch_array($productsQuery)) {
       $cart[$products['products_id']] =
         array('qty' => $products['customers_basket_quantity']);
@@ -137,9 +140,66 @@ class OSCommerce {
       while ($attributes = tep_db_fetch_array($attributesQuery)) {
         $cart[$products['products_id']]['attributes'][$attributes['products_options_id']] = $attributes['products_options_value_id'];
       }
+
+      $productID = $products['products_id'];
+      $productInCart = $cart[$productID];
+
+      $productFields = $this->findProductByID($products['products_id']);
+      $productFields['quantity'] = $productInCart['qty'];
+
+      if (isset($productInCart['attributes'])) {
+        $productFields['final_price'] += $this->attributesPrice($productID, $productInCart);
+        $productFields['attributes'] = $productInCart['attributes'];
+      }
+
+      $cart[$products['products_id']] = $productFields;
     }
 
     return $cart;
+  }
+
+  /**
+   * Ripped from osCommerce shopping cart.
+   */
+  protected function attributesPrice($productID, $productInCart) {
+    $attributesPrice = 0;
+    $attributes = $productInCart['attributes'];
+
+    reset($productInCart['attributes']);
+    while (list($option, $value) = each($productInCart['attributes'])) {
+      $attribute_price_query = tep_db_query("select options_values_price, price_prefix from " . TABLE_PRODUCTS_ATTRIBUTES . " where products_id = '" . (int)$productID . "' and options_id = '" . (int)$option . "' and options_values_id = '" . (int)$value . "'");
+      $attribute_price = tep_db_fetch_array($attribute_price_query);
+      if ($attribute_price['price_prefix'] == '+') {
+        $attributesPrice += $attribute_price['options_values_price'];
+      } else {
+        $attributesPrice -= $attribute_price['options_values_price'];
+      }
+    }
+
+    return $attributesPrice;
+  }
+
+  public function findProductByID($productID) {
+    $query = tep_db_query("select p.products_id, pd.products_name, p.products_model, p.products_image, p.products_price, p.products_weight, p.products_tax_class_id from " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd where p.products_id = '" . (int)$productID . "' and pd.products_id = p.products_id and pd.language_id = '" . DEFAULT_LANGUAGE_ID . "'");
+
+    $product = tep_db_fetch_array($query);
+    $prid = $product['products_id'];
+    $product_price = $product['products_price'];
+
+    $specials_query = tep_db_query("select specials_new_products_price from " . TABLE_SPECIALS . " where products_id = '" . (int)$prid . "' and status = '1'");
+    if (tep_db_num_rows($specials_query)) {
+      $specials = tep_db_fetch_array($specials_query);
+      $product_price = $specials['specials_new_products_price'];
+    }
+
+    return array('id' => $prid,
+                 'name' => $product['products_name'],
+                 'model' => $product['products_model'],
+                 'image' => $product['products_image'],
+                 'price' => $product_price,
+                 'weight' => $product['products_weight'],
+                 'final_price' => ($product_price),
+                 'tax_class_id' => $product['products_tax_class_id']);
   }
 }
 
@@ -174,6 +234,8 @@ class OSCommerce_Order {
     foreach (OSCommerce::$CustomerFields as $fields)
       $this->fields[$fields] = $customer[$fields];
 
+    unset($this->fields['customers_password']);
+
     $this->fields['customers_name'] =
      $customer['customers_firstname'] . ' ' . $customer['customers_lastname'];
 
@@ -188,10 +250,6 @@ class OSCommerce_Order {
     $this->fields['cc_owner'] = '';
     $this->fields['cc_number'] = '';
     $this->fields['cc_expires'] = '';
-
-    $this->fields['subtotal'] = 0;
-    $this->fields['tax'] = 0;
-    $this->fields['comments'] = '';
   }
 
   public function setCustomerAddress($address) {
@@ -223,6 +281,7 @@ class OSCommerce_Order {
     $this->fields[$prefix.'address_format_id'] = $country['address_format_id'];
 
     unset($this->fields[$prefix.'country_id']);
+    unset($this->fields[$prefix.'zone_id']);
   }
 
   protected function __call($name, $args) {
@@ -244,11 +303,88 @@ class OSCommerce_Order {
     }
   }
 
+  public function setShippingTotal($total) { $this->shipping_total = $total; }
+  public function getShippingTotal() { return $this->shipping_total;}
+
+  public function setSubtotal($subtotal) { $this->subtotal = $subtotal; }
+  public function getSubtotal() { return $this->subtotal; }
+
+  public function setTax($tax) { $this->tax = $tax; }
+  public function getTax() { return $this->tax; }
+
+  public function setTotal($total) { $this->total = $total; }
+  public function getTotal() { return $this->total;}
+
+  public function setComment($comment) { $this->comment = $comment; }
+  public function getComment() { return $this->comment;}
+
   public function setProducts($products) { $this->products = $products; }
 
   public function saveToDB() {
     if ($this->fields['orders_id'] == OSCommerce_Order::NEW_RECORD) {
-      tep_db_perform(TABLE_ORDERS, $this->orders);
+      unset($this->fields['orders_id']);
+
+      tep_db_perform(TABLE_ORDERS, $this->fields);
+      $orderID = tep_db_insert_id();
+
+      print_r($this->products);
+      die();
+      foreach ($this->products as $productID => $fields) {
+        $orderProduct = array('orders_id' => $orderID, 
+                              'products_id' => $fields['id'], 
+                              'products_model' => $fields['model'], 
+                              'products_name' => $fields['name'], 
+                              'products_price' => $fields['price'], 
+                              'final_price' => $fields['final_price'], 
+                              'products_tax' => $fields['tax'], 
+                              'products_quantity' => $fields['quantity']);
+        tep_db_perform(TABLE_ORDERS_PRODUCTS, $sql_data_array);
+
+        if (isset($fields['attributes'])) {
+          foreach ($fields['attributes'] as $option_id => $value_id) {
+            $attributes = tep_db_query("select popt.products_options_name, poval.products_options_values_name, pa.options_values_price, pa.price_prefix from " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " poval, " . TABLE_PRODUCTS_ATTRIBUTES . " pa where pa.products_id = '" . $fields['id'] . "' and pa.options_id = '" . $option_id . "' and pa.options_id = popt.products_options_id and pa.options_values_id = '" . $value_id . "' and pa.options_values_id = poval.products_options_values_id and popt.language_id = '" . DEFAULT_LANGUAGE_ID . "' and poval.language_id = '" . DEFAULT_LANGUAGE_ID . "'");
+
+            $attributes_values = tep_db_fetch_array($attributes);
+
+            $sql_data_array = array('orders_id' => $insert_id, 
+                                    'orders_products_id' => $order_products_id, 
+                                    'products_options' => $attributes_values['products_options_name'],
+                                    'products_options_values' => $attributes_values['products_options_values_name'], 
+                                    'options_values_price' => $attributes_values['options_values_price'], 
+                                    'price_prefix' => $attributes_values['price_prefix']);
+            tep_db_perform(TABLE_ORDERS_PRODUCTS_ATTRIBUTES, $sql_data_array);
+          }
+        }
+
+        $orderTotals = 0;
+        tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $insert_id,
+                            'title' => 'Subtotal',
+                            'text' => 'Subtotal',
+                            'value' => $this->getSubtotal(), 
+                            'class' => 'ot_subtotal', 
+                            'sort_order' => $orderTotals++));
+
+        tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $insert_id,
+                            'title' => 'Tax',
+                            'text' => 'Tax',
+                            'value' => $this->getTax(), 
+                            'class' => 'ot_tax', 
+                            'sort_order' => $orderTotals++));
+
+        tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $insert_id,
+                            'title' => 'Shipping',
+                            'text' => 'Shipping',
+                            'value' => $this->getShippingTotal(), 
+                            'class' => 'ot_shipping', 
+                            'sort_order' => $orderTotals++));
+
+        tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $insert_id,
+                            'title' => 'Total',
+                            'text' =>  'Total',
+                            'value' => $this->getTotal(), 
+                            'class' => 'ot_total', 
+                            'sort_order' => $orderTotals++));
+      }
     }
     else {
       throw new Exception("not happening: order update not implemented.");

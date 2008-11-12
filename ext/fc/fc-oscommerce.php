@@ -182,6 +182,12 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
 
   $order->setProducts($osc->loadCartForCustomer($customer));
 
+  $order->setTax($trans->tax_total);
+  $order->setShippingTotal($trans->shipping_total);
+  $order->setTotal($trans->order_total);
+
+  $order->setSubtotal($order->getTotal() - $order->getTax() - $order->getShippingTotal());
+
   foreach ($tx->custom_fields[0]->custom_field as $customField) {
     $fieldName = $customField->custom_field_name[0]->tagData;
     $fieldValue = $customField->custom_field_value[0]->tagData;
