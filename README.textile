@@ -1,5 +1,5 @@
 
-FauxsC
+Faux-sC
 ------
 
 Sneaking FoxyCart through the system.  A straightforward-to-install modification to osCommerce that directs the osCommerce checkout through FoxyCart.
@@ -11,7 +11,7 @@ Installation
 ============
 
 <code><pre>
-ext/fc/                         <----- copy this whole tree into your installation
+ext/foxycart/                    <----- copy this whole tree into your installation
   checkoutReplacement.php       
   class.rc4crypt.php
   class.xmlparser.php
@@ -27,16 +27,16 @@ ext/fc/                         <----- copy this whole tree into your installati
 </pre></code>
 
 
-1. Copy the @ext/fc@ folder into the @ext@ folder of your osCommerce installation.
+1. Copy the @ext/foxycart@ folder into the @ext@ folder of your osCommerce installation.
 
-2. Edit @config.php@, tell FauxSC where to find your osCommerce install and the address of your FoxyCart store.
+2. Edit @config.php@, tell Faux-sC where to find your osCommerce install and the address of your FoxyCart store.
 
 3. Copy this into the @<head>@ tag of your @checkout_process.php@ (at <a href="http://github.com/phred/fauxsc/tree/master/checkout_shipping.php#L193">@line 193@</a> for us):
 
 <code>
 <?php
 //---- BEGIN FAUXSC HIJACK --//
-include('ext/fc/checkoutReplacement.php');
+include('ext/foxycart/checkoutReplacement.php');
 //---- END FAUXSC HIJACK ----//
 ?>
 </code>
@@ -44,9 +44,9 @@ include('ext/fc/checkoutReplacement.php');
 4. Edit @checkoutReplacement.php@, change the message that displays to customers when they're directed to FoxyCart.
 
 5. Set your FoxyCart Store's datafeed to point to, for example:
-http://www.yourstore.com/ext/fc/fc-oscommerce.php
+http://www.yourstore.com/ext/foxycart/fc-oscommerce.php
 
-6. You may want to turn off your store's emails in FoxyCart: FauxSC will send out osCommerce-like emails whenever a new order is placed.
+6. You may want to turn off your store's emails in FoxyCart: Faux-sC will send out osCommerce-like emails whenever a new order is placed.
 
 7. Test.
 
@@ -85,4 +85,4 @@ Also, we will always use the English content for the order email, defined in osC
 Notes
 =====
 
-The OSCommerce class is designed to be usable outside of FauxSC.  Use it for good, not evil, and free data from the clutches of osCommerce.
+The OSCommerce class is designed to be usable outside of Faux-sC.  Use it for good, not evil, and free data from the clutches of osCommerce.
