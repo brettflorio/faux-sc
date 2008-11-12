@@ -1,6 +1,5 @@
 <?php
-define('OSC_INCLUDES_PATH', '../../');
-ini_set('include_path', ini_get('include_path') . ':' . OSC_INCLUDES_PATH);
+require_once('config.php');
 
 require_once(OSC_INCLUDES_PATH . 'includes/configure.php');
 require_once(OSC_INCLUDES_PATH . 'includes/application_top.php');

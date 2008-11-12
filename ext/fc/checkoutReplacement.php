@@ -1,5 +1,6 @@
 <?php
-//require_once('oscommerce.class.php');
+require_once('config.php');
+require_once('oscommerce.class.php');
 
   /**
    * Include this script in the <head> section of the checkout_shipping.php page.
@@ -18,12 +19,37 @@ $thickboxContent = <<<HTML
 </div>
 HTML;
 
+/**
+ * Create a form for the send-off to FoxyCart based on the current osCommerce
+ *  cart contents.  Not strictly necessary -- we could just send an aggregate
+ *  total and weight -- but this way, the customers see what they're buying
+ *  and that's just foxy.
+ */
 function getFoxyForm() {
-  return <<<HTML
-  <form action="" method="POST">
-    <input type="submit"/>
-  </form>
-HTML;
+  global $customer_id;
+  $osc = OSCommerce::instance();
+
+  $cart = $osc->loadCartForCustomer(array('customers_id' => $customer_id));
+  ob_start();
+?>
+  <form action="<?php echo FOXYCART_CART_URL ?>" method="POST">
+<?php  $ndx = 0;
+       foreach ($cart as $product) {
+        $fieldPrefix = (($ndx++ > 0) ? $ndx.':' : '');
+?>
+<input type="hidden" name="h:<?php echo $fieldPrefix ?>code" value="<?php echo htmlentities($product['id']) ?>"/>
+<input type="hidden" name="<?php echo $fieldPrefix ?>name" value="<?php echo htmlentities($product['name']) ?>"/>
+<input type="hidden" name="<?php echo $fieldPrefix ?>price" value="<?php echo htmlentities($product['final_price']) ?>"/>
+<input type="hidden" name="<?php echo $fieldPrefix ?>weight" value="<?php echo htmlentities($product['weight']) ?>"/>
+<input type="hidden" name="<?php echo $fieldPrefix ?>quantity" value="<?php echo htmlentities($product['quantity']) ?>"/>
+<?php } ?>
+    <input type="hidden" name="empty" value="true"/>
+    <input type="hidden" name="cart" value="checkout"/>
+    <input type="submit" name="h:submit"/>
+  </form>';
+<?php
+
+  return ob_get_clean();
 }
 
 $filteredContent =
