@@ -35,8 +35,10 @@ ext/fc/                         <----- copy this whole tree into your installati
 
 
 1. Copy ext/fc into your osCommerce installation.
+
 2. Edit config.php, tell fauxsc where to find your osCommerce install and the address of your FoxyCart store.
-3. Copy this into the @<head>@ tag of your checkout_process.php (at line 193 for us):
+
+3. Copy this into the @<head>@ tag of your checkout_process.php (at <a href="http://github.com/phred/fauxsc/tree/master/checkout_shipping.php#L193">@line 193@</a> for us):
 
 <pre><code>
 <?php
@@ -61,7 +63,7 @@ http://www.yourstore.com/ext/fc/fc-oscommerce.php
 How it Works
 ============
 
-We assume that you are still using osCommerce for your main catalog and its basic shopping cart.  Up until the customer has arrived at the "shipping options" page (checkout_shipping.php), the checkout process remains the same as usual: add to cart, update cart, checkout, login or create account.
+We assume that you are still using osCommerce for your main catalog and its basic shopping cart.  Up until the customer has arrived at the "shipping options" page (@checkout_shipping.php@), the checkout process remains the same as usual: add to cart, update cart, checkout, login or create account.
 
 Once they hit the shipping page, they're immediately presented with an overlay on the page that asks: do you want Expedited Checkout or Standard?  (The message is intentionally lame -- please write a clear explanation for your customers).  Note that the main reason we did this instead of just redirecting to Foxycart is for PayPal Standard; in the future, whether to redirect or ask will likely be an option in config.php.
 
@@ -72,7 +74,9 @@ The customer must now log in to FoxyCart, fill in their address and card informa
 Once the customer has confirmed the order, FoxyCart sends the order information back to fc-datafeed.php, which does the following:
 
 1. Creates an osCommerce account for the customer if they don't have one.  If they do, updates their address information in osCommerce.
+
 2. Creates an order from osCommerce's stored shopping cart contents.
+
 3. Sends an osCommerce order email out to the customer.
 
 
