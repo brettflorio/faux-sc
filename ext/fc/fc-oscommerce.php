@@ -1,10 +1,9 @@
 <?php
+require_once 'config.php';
 require_once 'class.rc4crypt.php';
 require_once 'class.xmlparser.php';
 require_once 'oscommerce.class.php';
 
-
-$key = 'CHANGE THIS TEXT to your own datafeed keyphrase';
 
 $_POST['FoxyData'] or die("error"); // Make sure we got passed some FoxyData
 
@@ -107,7 +106,7 @@ class FoxydataUtils {
 $utils = new FoxydataUtils($osc);
 
 $decryptor = new rc4crypt();
-$FoxyData = $decryptor->decrypt($key, urldecode($_POST["FoxyData"]));
+$FoxyData = $decryptor->decrypt(DATAFEED_KEY, urldecode($_POST["FoxyData"]));
 
 $data = new XMLParser($FoxyData);   // Parse that XML.
 $data->Parse();

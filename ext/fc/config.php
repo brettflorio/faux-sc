@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * Your datafeed key -- must match what you set up in FoxyCart.
+ */
+define('DATAFEED_KEY', 'CHANGE THIS TEXT to your own datafeed keyphrase');
+
+/**
  * Where to find the osCommerce catalog's includes directory.  If you installed this
  * in the default location, this should work, otherwise change to the absolute
  * path of your osCommerce installation.

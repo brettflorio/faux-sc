@@ -1,0 +1,78 @@
+
+fauxsC
+------
+
+Sneaking FoxyCart through the system.  A straightforward-to-install modification
+to osCommerce that allows the osCommerce checkout process to be directed through
+FoxyCart.
+
+Why, might you ask, would I want to do that?  Three letters and a word: PCI Compliance.
+
+
+Installation
+============
+
+This repository has an entire osCommerce 2.2rc2a installation in it.  However,
+only be concerned with these files:
+
+<code><pre>
+checkout_process.php            <----- peek here for an example install
+
+ext/fc/                         <----- copy this whole tree into your installation
+  checkoutReplacement.php       
+  class.rc4crypt.php
+  class.xmlparser.php
+  config.php
+  fc-oscommerce.php
+  jquery-latest.pack.js
+  loadingAnimation.gif
+  macFFBgHack.png
+  oscommerce.class.php
+  test.xmldatafeed.php
+  thickbox-compressed.js
+  thickbox.css
+</pre></code>
+
+
+1. Copy ext/fc into your osCommerce installation.
+2. Edit config.php, tell fauxsc where to find your osCommerce install and the address of your FoxyCart store.
+3. Copy this into the @<head>@ tag of your checkout_process.php (at line 193 for us):
+
+<pre><code>
+<?php
+//---- BEGIN FAUXSC HIJACK --//
+include('ext/fc/checkoutReplacement.php');
+//---- END FAUXSC HIJACK ----//
+?>
+</code></pre>
+
+4. Edit the message that your customers see when directed to FoxyCart in checkoutReplacement.php.
+
+5. Set your FoxyCart Store's datafeed to point to:
+http://www.yourstore.com/ext/fc/fc-oscommerce.php
+
+6. You may want to turn off your store's emails in FoxyCart, as this module will send out osCommerce-like emails whenever a new order is placed.
+
+7. Test.
+
+8. Once you're happy with the checkout process, go ahead and turn off those notoriously PCI-breaking osCommerce payment modules -- such as the plain Credit Card, Authorize.net, etc.  You may want to leave standard PayPal on as, at the time of this writing, FoxyCart does not support standard PayPal.
+
+
+How it Works
+============
+
+We assume that you are still using osCommerce for your main catalog and its basic shopping cart.  Up until the customer has arrived at the "shipping options" page (checkout_shipping.php), the checkout process remains the same as usual: add to cart, update cart, checkout, login or create account.
+
+Once they hit the shipping page, they're immediately presented with an overlay on the page that asks: do you want Expedited Checkout or Standard?  (The message is intentionally lame -- please write a clear explanation for your customers).  Note that the main reason we did this instead of just redirecting to Foxycart is for PayPal Standard; in the future, whether to redirect or ask will likely be an option in config.php.
+
+OK, so, the customer chooses "expedited" and they're taken right to FoxyCart.  The "expedited" link was actually wrapped up in a form that creates a shopping cart in FoxyCart whose contents match the osCommerce basket.
+
+The customer must now log in to FoxyCart, fill in their address and card information, and complete their order.  In the future, FoxyCart will likely have an API for two-way synchronization of user address information; however, at the moment, a customer who has checked out through osCommerce must enter their address information anew the first time through the FoxyCart checkout.
+
+Once the customer has confirmed the order, FoxyCart sends the order information back to fc-datafeed.php, which does the following:
+
+1. Creates an osCommerce account for the customer if they don't have one.  If they do, updates their address information in osCommerce.
+2. Creates an order from osCommerce's stored shopping cart contents.
+3. Sends an osCommerce order email out to the customer.
+
+
