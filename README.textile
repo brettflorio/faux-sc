@@ -1,12 +1,10 @@
 
-fauxsC
+FauxsC
 ------
 
-Sneaking FoxyCart through the system.  A straightforward-to-install modification
-to osCommerce that allows the osCommerce checkout process to be directed through
-FoxyCart.
+Sneaking FoxyCart through the system.  A straightforward-to-install modification to osCommerce that directs the osCommerce checkout through FoxyCart.
 
-Why, might you ask, would I do that to my osCommerce store?  Simple: PCI Compliance.
+Why, might you ask, would I want that in my osCommerce store?  Simple: "PCI Compliance":http://en.wikipedia.org/wiki/Payment_card_industry -- you don't really want the burden of keeping your customers' credit card numbers on file, do you?
 
 
 Installation
@@ -29,26 +27,26 @@ ext/fc/                         <----- copy this whole tree into your installati
 </pre></code>
 
 
-1. Copy ext/fc into your osCommerce installation.
+1. Copy the @ext/fc@ folder into the @ext@ folder of your osCommerce installation.
 
-2. Edit config.php, tell fauxsc where to find your osCommerce install and the address of your FoxyCart store.
+2. Edit @config.php@, tell FauxSC where to find your osCommerce install and the address of your FoxyCart store.
 
-3. Copy this into the @<head>@ tag of your checkout_process.php (at <a href="http://github.com/phred/fauxsc/tree/master/checkout_shipping.php#L193">@line 193@</a> for us):
+3. Copy this into the @<head>@ tag of your @checkout_process.php@ (at <a href="http://github.com/phred/fauxsc/tree/master/checkout_shipping.php#L193">@line 193@</a> for us):
 
-<pre><code>
+<code>
 <?php
 //---- BEGIN FAUXSC HIJACK --//
 include('ext/fc/checkoutReplacement.php');
 //---- END FAUXSC HIJACK ----//
 ?>
-</code></pre>
+</code>
 
-4. Edit the message that your customers see when directed to FoxyCart in checkoutReplacement.php.
+4. Edit @checkoutReplacement.php@, change the message that displays to customers when they're directed to FoxyCart.
 
-5. Set your FoxyCart Store's datafeed to point to:
+5. Set your FoxyCart Store's datafeed to point to, for example:
 http://www.yourstore.com/ext/fc/fc-oscommerce.php
 
-6. You may want to turn off your store's emails in FoxyCart, as this module will send out osCommerce-like emails whenever a new order is placed.
+6. You may want to turn off your store's emails in FoxyCart: FauxSC will send out osCommerce-like emails whenever a new order is placed.
 
 7. Test.
 
@@ -75,3 +73,16 @@ Once the customer has confirmed the order, FoxyCart sends the order information 
 3. Sends an osCommerce order email out to the customer.
 
 
+
+Caveats
+=======
+
+We don't support any of osCommerce's internationalization features -- when the customer checks out with FoxyCart, we have osCommerce always send the English descriptions of the products in the cart.  At the moment, FoxyCart itself doesn't support more than one language per store, until that's changed we're going to leave i18n alone.
+
+Also, we will always use the English content for the order email, defined in osCommerce's @includes/languages/english/checkout_process.php@.  We also use a standard US address format in the receipt email that's hardcoded into our OSCommerce interoperability class.
+
+
+Notes
+=====
+
+The OSCommerce class is designed to be usable outside of FauxSC.  Use it for good, not evil, and free data from the clutches of osCommerce.
