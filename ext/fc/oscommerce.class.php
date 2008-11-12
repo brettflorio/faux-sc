@@ -327,8 +327,8 @@ class OSCommerce_Order {
       tep_db_perform(TABLE_ORDERS, $this->fields);
       $orderID = tep_db_insert_id();
 
-      print_r($this->products);
-      die();
+      $totalPrice = 0;
+
       foreach ($this->products as $productID => $fields) {
         $orderProduct = array('orders_id' => $orderID, 
                               'products_id' => $fields['id'], 
@@ -336,9 +336,10 @@ class OSCommerce_Order {
                               'products_name' => $fields['name'], 
                               'products_price' => $fields['price'], 
                               'final_price' => $fields['final_price'], 
-                              'products_tax' => $fields['tax'], 
+                              'products_tax' => 0, 
                               'products_quantity' => $fields['quantity']);
-        tep_db_perform(TABLE_ORDERS_PRODUCTS, $sql_data_array);
+        tep_db_perform(TABLE_ORDERS_PRODUCTS, $orderProduct);
+        $orderProductID = tep_db_insert_id();
 
         if (isset($fields['attributes'])) {
           foreach ($fields['attributes'] as $option_id => $value_id) {
@@ -346,8 +347,8 @@ class OSCommerce_Order {
 
             $attributes_values = tep_db_fetch_array($attributes);
 
-            $sql_data_array = array('orders_id' => $insert_id, 
-                                    'orders_products_id' => $order_products_id, 
+            $sql_data_array = array('orders_id' => $orderID, 
+                                    'orders_products_id' => $orderProductID, 
                                     'products_options' => $attributes_values['products_options_name'],
                                     'products_options_values' => $attributes_values['products_options_values_name'], 
                                     'options_values_price' => $attributes_values['options_values_price'], 
@@ -355,36 +356,39 @@ class OSCommerce_Order {
             tep_db_perform(TABLE_ORDERS_PRODUCTS_ATTRIBUTES, $sql_data_array);
           }
         }
-
-        $orderTotals = 0;
-        tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $insert_id,
-                            'title' => 'Subtotal',
-                            'text' => 'Subtotal',
-                            'value' => $this->getSubtotal(), 
-                            'class' => 'ot_subtotal', 
-                            'sort_order' => $orderTotals++));
-
-        tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $insert_id,
-                            'title' => 'Tax',
-                            'text' => 'Tax',
-                            'value' => $this->getTax(), 
-                            'class' => 'ot_tax', 
-                            'sort_order' => $orderTotals++));
-
-        tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $insert_id,
-                            'title' => 'Shipping',
-                            'text' => 'Shipping',
-                            'value' => $this->getShippingTotal(), 
-                            'class' => 'ot_shipping', 
-                            'sort_order' => $orderTotals++));
-
-        tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $insert_id,
-                            'title' => 'Total',
-                            'text' =>  'Total',
-                            'value' => $this->getTotal(), 
-                            'class' => 'ot_total', 
-                            'sort_order' => $orderTotals++));
       }
+
+      $orderTotals = 0;
+      tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $orderID,
+                                               'title' => 'Subtotal',
+                                               'text' => 'Subtotal',
+                                               'value' => $this->getSubtotal(), 
+                          'text' =>  sprintf('$%.2f', $this->getSubtotal()),
+                                               'class' => 'ot_subtotal', 
+                                               'sort_order' => $orderTotals++));
+
+      tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $orderID,
+                          'title' => 'Tax',
+                          'text' => 'Tax',
+                          'value' => $this->getTax(), 
+                          'text' =>  sprintf('$%.2f', $this->getTax()),
+                          'class' => 'ot_tax', 
+                          'sort_order' => $orderTotals++));
+
+      tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $orderID,
+                          'title' => 'Shipping',
+                          'text' => 'Shipping',
+                          'text' =>  sprintf('$%.2f', $this->getShippingTotal()),
+                          'value' => $this->getShippingTotal(), 
+                          'class' => 'ot_shipping', 
+                          'sort_order' => $orderTotals++));
+
+      tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $orderID,
+                          'title' => 'Total',
+                          'text' =>  sprintf('$%.2f', $this->getTotal()),
+                          'value' => $this->getTotal(), 
+                          'class' => 'ot_total', 
+                          'sort_order' => $orderTotals++));
     }
     else {
       throw new Exception("not happening: order update not implemented.");
