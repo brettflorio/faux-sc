@@ -283,6 +283,29 @@ class OSCommerce_Order {
     unset($this->fields[$prefix.'zone_id']);
   }
 
+  public function getBillingAddress() {
+    return $this->getAddress(OSCommerce::ORDER_BILLING);
+  }
+
+  public function getShippingAddress() {
+    return $this->getAddress(OSCommerce::ORDER_SHIPPING);
+  }
+
+  /**
+   * Translate from the prefixed order address fields back to a non-prefixed
+   * hash.  This is used by, for example, the tep_address_label function.
+   */
+  protected function getAddress($prefix) {
+    $fields = array();
+
+    foreach ($this->fields as $field => $value) {
+      if (strpos($field, $prefix) == 0) // Strip off address prefix, store.
+        $fields[substr($field, strlen($prefix))] = $value;
+    }
+
+    return $fields;
+  }
+
   protected function __call($name, $args) {
     if (method_exists($this, $name))
       return call_user_func(array($this, $name), $args);
@@ -324,9 +347,10 @@ class OSCommerce_Order {
       unset($this->fields['orders_id']);
 
       tep_db_perform(TABLE_ORDERS, $this->fields);
-      $orderID = tep_db_insert_id();
+      $this->fields['orders_id'] = $orderID = tep_db_insert_id();
 
       $totalPrice = 0;
+      $productsOrdered = '';  // Text summary of products ordered; for email.
 
       foreach ($this->products as $productID => $fields) {
         $orderProduct = array('orders_id' => $orderID, 
@@ -339,6 +363,8 @@ class OSCommerce_Order {
                               'products_quantity' => $fields['quantity']);
         tep_db_perform(TABLE_ORDERS_PRODUCTS, $orderProduct);
         $orderProductID = tep_db_insert_id();
+
+        $productsAttributesText = '';
 
         if (isset($fields['attributes'])) {
           foreach ($fields['attributes'] as $option_id => $value_id) {
@@ -353,44 +379,98 @@ class OSCommerce_Order {
                                     'options_values_price' => $attributes_values['options_values_price'], 
                                     'price_prefix' => $attributes_values['price_prefix']);
             tep_db_perform(TABLE_ORDERS_PRODUCTS_ATTRIBUTES, $sql_data_array);
+            $productsAttributesText .= "\n\t" . $attributes_values['products_options_name'] . ' ' . $attributes_values['products_options_values_name'];
           }
         }
+
+        $productsOrdered .= $fields['quantity'] . ' x ' . $fields['name'] . ' (' . $fields['model'] . ') = ' . sprintf('$ %.2f', $fields['quantity'] * $fields['final_price']) . $productsAttributesText . "\n";
       }
 
-      $orderTotals = 0;
-      tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $orderID,
-                                               'title' => 'Subtotal',
-                                               'text' => 'Subtotal',
-                                               'value' => $this->getSubtotal(), 
-                          'text' =>  sprintf('$%.2f', $this->getSubtotal()),
-                                               'class' => 'ot_subtotal', 
-                                               'sort_order' => $orderTotals++));
+      $orderTotals = array();
+      $count = 0;
+      $orderTotals[] = array('orders_id' => $orderID,
+                             'title' => 'Subtotal',
+                             'text' => 'Subtotal',
+                             'value' => $this->getSubtotal(), 
+                             'text' =>  sprintf('$%.2f', $this->getSubtotal()),
+                             'class' => 'ot_subtotal', 
+                             'sort_order' => count($orderTotals));
+      tep_db_perform(TABLE_ORDERS_TOTAL, $orderTotals[$count++]);
 
-      tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $orderID,
-                          'title' => 'Tax',
-                          'text' => 'Tax',
-                          'value' => $this->getTax(), 
-                          'text' =>  sprintf('$%.2f', $this->getTax()),
-                          'class' => 'ot_tax', 
-                          'sort_order' => $orderTotals++));
+      $orderTotals[] = array('orders_id' => $orderID,
+                             'title' => 'Tax',
+                             'text' => 'Tax',
+                             'value' => $this->getTax(), 
+                             'text' =>  sprintf('$%.2f', $this->getTax()),
+                             'class' => 'ot_tax', 
+                             'sort_order' => count($orderTotals));
+      tep_db_perform(TABLE_ORDERS_TOTAL, $orderTotals[$count++]);
 
-      tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $orderID,
-                          'title' => 'Shipping',
-                          'text' => 'Shipping',
-                          'text' =>  sprintf('$%.2f', $this->getShippingTotal()),
-                          'value' => $this->getShippingTotal(), 
-                          'class' => 'ot_shipping', 
-                          'sort_order' => $orderTotals++));
+      $orderTotals[] = array('orders_id' => $orderID,
+                             'title' => 'Shipping',
+                             'text' => 'Shipping',
+                             'text' =>  sprintf('$%.2f', $this->getShippingTotal()),
+                             'value' => $this->getShippingTotal(), 
+                             'class' => 'ot_shipping', 
+                             'sort_order' => count($orderTotals));
+      tep_db_perform(TABLE_ORDERS_TOTAL, $orderTotals[$count++]);
 
-      tep_db_perform(TABLE_ORDERS_TOTAL, array('orders_id' => $orderID,
-                          'title' => 'Total',
-                          'text' =>  sprintf('$%.2f', $this->getTotal()),
-                          'value' => $this->getTotal(), 
-                          'class' => 'ot_total', 
-                          'sort_order' => $orderTotals++));
+      $orderTotals[] = array('orders_id' => $orderID,
+                             'title' => 'Total',
+                             'text' =>  sprintf('$%.2f', $this->getTotal()),
+                             'value' => $this->getTotal(), 
+                             'class' => 'ot_total', 
+                             'sort_order' => count($orderTotals));
+      tep_db_perform(TABLE_ORDERS_TOTAL, $orderTotals[$count++]);
+
+      reset($orderTotals);
+
+      $this->sendOrderEmail($productsOrdered, $orderTotals);
     }
     else {
       throw new Exception("not happening: order update not implemented.");
+    }
+  }
+
+  /**
+   * Cribbed (again) from osCommerce. Their design philosophy must be: Always
+   * Repeat Yourself (At Least If You Want To Do Anything That's Not Baked In.) --
+   * ARY(ATLIFYWTDATNBI)
+   */
+  public function sendOrderEmail($productsOrdered, $orderTotals) {
+    include(OSC_INCLUDES_PATH . 'includes/languages/english/checkout_process.php');
+
+    $emailText = STORE_NAME . "\n" . 
+                   EMAIL_SEPARATOR . "\n" . 
+                   EMAIL_TEXT_ORDER_NUMBER . ' ' . $this->fields['orders_id'] . "\n" .
+                   EMAIL_TEXT_INVOICE_URL . ' ' . tep_href_link(FILENAME_ACCOUNT_HISTORY_INFO, 'order_id=' . $this->fields['orders_id'], 'SSL', false) . "\n" .
+                   EMAIL_TEXT_DATE_ORDERED . ' ' . strftime(DATE_FORMAT_LONG) . "\n\n";
+    if ($this->fields['comments']) {
+      $emailText .= tep_db_output($this->fields['comments']) . "\n\n";
+    }
+    $emailText .= EMAIL_TEXT_PRODUCTS . "\n" . 
+                    EMAIL_SEPARATOR . "\n" . 
+                    $productsOrdered . 
+                    EMAIL_SEPARATOR . "\n";
+
+    for ($i=0, $n=sizeof($orderTotals); $i<$n; $i++) {
+      $emailText .= strip_tags($orderTotals[$i]['title']) . ' ' . strip_tags($orderTotals[$i]['text']) . "\n";
+    }
+
+    if ($order->content_type != 'virtual') {
+      $emailText .= "\n" . EMAIL_TEXT_DELIVERY_ADDRESS . "\n" . 
+                      EMAIL_SEPARATOR . "\n" .
+                      tep_address_label($this->fields['customers_id'], $this->shippingAddress(), 0, '', "\n") . "\n";
+    }
+
+    $emailText .= "\n" . EMAIL_TEXT_BILLING_ADDRESS . "\n" .
+                    EMAIL_SEPARATOR . "\n" .
+                    tep_address_label($customer_id, $this->billingAddress(), 0, '', "\n") . "\n\n";
+
+    tep_mail($this->fields['customers_firstname'] . ' ' . $order->customer['customers_lastname'], $order->customer['customers_email_address'], EMAIL_TEXT_SUBJECT, $emailText, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
+
+    if (SEND_EXTRA_ORDER_EMAILS_TO != '') {
+      tep_mail('', SEND_EXTRA_ORDER_EMAILS_TO, EMAIL_TEXT_SUBJECT, $emailText, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
     }
   }
 }
