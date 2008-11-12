@@ -6,18 +6,13 @@ Sneaking FoxyCart through the system.  A straightforward-to-install modification
 to osCommerce that allows the osCommerce checkout process to be directed through
 FoxyCart.
 
-Why, might you ask, would I want to do that?  Three letters and a word: PCI Compliance.
+Why, might you ask, would I do that to my osCommerce store?  Simple: PCI Compliance.
 
 
 Installation
 ============
 
-This repository has an entire osCommerce 2.2rc2a installation in it.  However,
-only be concerned with these files:
-
 <code><pre>
-checkout_process.php            <----- peek here for an example install
-
 ext/fc/                         <----- copy this whole tree into your installation
   checkoutReplacement.php       
   class.rc4crypt.php
