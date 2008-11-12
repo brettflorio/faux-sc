@@ -9,7 +9,7 @@ $key = 'CHANGE THIS TEXT to your own datafeed keyphrase';
 $_POST['FoxyData'] or die("error"); // Make sure we got passed some FoxyData
 
 function fatal_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
-	die($errstr);
+  if ($errno < E_WARN) die($errstr);
 	return true;
 }
 set_error_handler('fatal_error_handler');

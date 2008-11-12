@@ -299,7 +299,7 @@ class OSCommerce_Order {
     $fields = array();
 
     foreach ($this->fields as $field => $value) {
-      if (strpos($field, $prefix) == 0) // Strip off address prefix, store.
+      if (strpos($field, $prefix) === 0) // Strip off address prefix, store.
         $fields[substr($field, strlen($prefix))] = $value;
     }
 
@@ -457,15 +457,27 @@ class OSCommerce_Order {
       $emailText .= strip_tags($orderTotals[$i]['title']) . ' ' . strip_tags($orderTotals[$i]['text']) . "\n";
     }
 
-    if ($order->content_type != 'virtual') {
-      $emailText .= "\n" . EMAIL_TEXT_DELIVERY_ADDRESS . "\n" . 
-                      EMAIL_SEPARATOR . "\n" .
-                      tep_address_label($this->fields['customers_id'], $this->shippingAddress(), 0, '', "\n") . "\n";
-    }
+    extract($this->getShippingAddress());
+    $emailText .= "\n" . EMAIL_TEXT_DELIVERY_ADDRESS . "\n" . 
+      EMAIL_SEPARATOR . "\n" .
+"$name
+$street_address\n" .
+($suburb ? $suburb."\n" : "") .
+"$city, $state $postcode
+$country\n\n";
+                     
 
+    extract($this->getShippingAddress());
     $emailText .= "\n" . EMAIL_TEXT_BILLING_ADDRESS . "\n" .
                     EMAIL_SEPARATOR . "\n" .
-                    tep_address_label($customer_id, $this->billingAddress(), 0, '', "\n") . "\n\n";
+"$name
+$street_address\n" .
+($suburb ? $suburb."\n" : "") .
+"$city, $state $postcode
+$country\n\n";
+    print_r($this);
+    die($emailText);
+
 
     tep_mail($this->fields['customers_firstname'] . ' ' . $order->customer['customers_lastname'], $order->customer['customers_email_address'], EMAIL_TEXT_SUBJECT, $emailText, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
 
