@@ -33,13 +33,13 @@ ext/foxycart/                    <----- copy this whole tree into your installat
 
 3. Copy this into the @<head>@ tag of your @checkout_process.php@ (at <a href="http://github.com/phred/fauxsc/tree/master/checkout_shipping.php#L193">@line 193@</a> for us):
 
-<code>
+<code syntax="php"><pre>
 <?php
 //---- BEGIN FAUXSC HIJACK --//
 include('ext/foxycart/checkoutReplacement.php');
 //---- END FAUXSC HIJACK ----//
 ?>
-</code>
+</pre></code>
 
 4. Edit @checkoutReplacement.php@, change the message that displays to customers when they're directed to FoxyCart.
 
