@@ -9,11 +9,9 @@ Why, might you ask, would I want that in my osCommerce store?  Simple: "PCI Comp
 
 Download
 ========
-The latest, as a zip archive:
-http://github.com/themancan/faux-sc/zipball/master
+"The latest, as a zip archive":http://github.com/themancan/faux-sc/zipball/master
 
-The latest, as a compressed tarball:
-http://github.com/themancan/faux-sc/tarball/master
+"The latest, as a compressed tarball":http://github.com/themancan/faux-sc/tarball/master
 
 
 Installation
