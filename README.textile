@@ -7,10 +7,22 @@ Sneaking FoxyCart through the system.  A straightforward-to-install modification
 Why, might you ask, would I want that in my osCommerce store?  Simple: "PCI Compliance":http://en.wikipedia.org/wiki/Payment_card_industry -- you don't really want the burden of keeping your customers' credit card numbers on file, do you?
 
 
+Download
+========
+The latest, as a zip archive:
+http://github.com/themancan/faux-sc/zipball/master
+
+The latest, as a compressed tarball:
+http://github.com/themancan/faux-sc/tarball/master
+
+
 Installation
 ============
 
+Extract the downloaded archive.  Now you've got the following files:
+
 <code><pre>
+README.textile
 ext/foxycart/                    <----- copy this whole tree into your installation
   checkoutReplacement.php       
   class.rc4crypt.php
