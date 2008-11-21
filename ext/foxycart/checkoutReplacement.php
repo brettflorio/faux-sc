@@ -57,9 +57,9 @@ $filteredContent =
 $filteredContent = str_replace("'", "\\'", $filteredContent);
 $filteredContent = str_replace("\n", "", $filteredContent);
 ?>
-<script type="text/javascript" src="/ext/fc/jquery-latest.pack.js"></script>
-<script type="text/javascript" src="/ext/fc/thickbox-compressed.js"></script>
-<link rel="stylesheet" type="text/css" href="/ext/fc/thickbox.css" media="all"/>
+<script type="text/javascript" src="/ext/foxycart/jquery-latest.pack.js"></script>
+<script type="text/javascript" src="/ext/foxycart/thickbox-compressed.js"></script>
+<link rel="stylesheet" type="text/css" href="/ext/foxycart/thickbox.css" media="all"/>
 
 <script type="text/javascript"><!--
 // <[!CDATA[

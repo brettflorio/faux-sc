@@ -16,7 +16,7 @@
 // Set the key you entered in your FoxyCart.com admin.
 // Modify the XML below as necessary.  DO NOT modify the structure, just the data
 // ======================================================================================
-$myURL = 'http://fauxsc.dev/ext/fc/fc-oscommerce.php';
+$myURL = 'http://fauxsc.dev/ext/foxycart/fc-oscommerce.php';
 $myKey = 'CHANGE THIS TEXT to your own datafeed keyphrase';
 
 // This is FoxyCart Version 0.6 XML.  See http://wiki.foxycart.com/docs:datafeed?s[]=xml
