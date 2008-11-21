@@ -1,7 +1,4 @@
 <?php
-require_once('config.php');
-require_once('oscommerce.class.php');
-
   /**
    * Include this script in the <head> section of the checkout_shipping.php page.
    * Shows 'expedited checkout' as an option in a thickbox, or allows the customer
