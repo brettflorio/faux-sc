@@ -200,6 +200,17 @@ class OSCommerce {
                  'final_price' => ($product_price),
                  'tax_class_id' => $product['products_tax_class_id']);
   }
+
+  public function torchCartForCustomer($customer) {
+    $customerID = $customer['customers_id'];
+
+    $productsQuery = tep_db_query("delete from " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . " where customers_id = '" . (int)$customerID . "'");
+    $productsQuery = tep_db_query("delete from " . TABLE_CUSTOMERS_BASKET . " where customers_id = '" . (int)$customerID . "'");
+
+    if (tep_session_is_registered('cartID')) tep_session_unregister('cartID');
+
+    return $cart;
+  }
 }
 
 class OSCommerce_Order {
