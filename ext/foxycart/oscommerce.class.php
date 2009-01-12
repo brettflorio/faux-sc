@@ -208,8 +208,6 @@ class OSCommerce {
     $productsQuery = tep_db_query("delete from " . TABLE_CUSTOMERS_BASKET . " where customers_id = '" . (int)$customerID . "'");
 
     if (tep_session_is_registered('cartID')) tep_session_unregister('cartID');
-
-    return $cart;
   }
 }
 
