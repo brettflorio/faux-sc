@@ -1,4 +1,6 @@
 <?php
+define('SESSION_BLOCK_SPIDERS', false); // Don't let osCommerce block the datafeed POST
+
 require_once 'config.php';
 require_once 'class.rc4crypt.php';
 require_once 'class.xmlparser.php';
@@ -142,7 +144,6 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
   foreach (FoxyDataUtils::$CustomerFieldMap as $feed_field => $db_field) {
     $customer_fields[$feed_field] = $trans->$feed_field;
   }
-
   $customer_billing_address = array();
   $customer_shipping_address = array();
 
@@ -154,6 +155,9 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
     $customer_shipping_address[$feed_field] = $trans->$shipping_field;
   }
 
+  if (!$customer_shipping_address['first_name'])
+    $customer_shipping_address = $customer_billing_address;
+
   $customer_exists = $osc->customerExists($customer_fields['customer_email']);
 
   if ($customer_exists) {
@@ -162,8 +166,8 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
      $utils->mapAddressToDB($customer_shipping_address));
   }
   else {
-    $osc->createCustomer($utils->mapCustomerToDB($osc, $customer_fields),
-     $utils->mapAddressToDB($osc, $customer_billing_address));
+    $osc->createCustomer($utils->mapCustomerToDB($customer_fields),
+     $utils->mapAddressToDB($customer_billing_address));
   }
 
   $customer = $osc->findCustomer($customer_fields['customer_email']);
@@ -187,6 +191,8 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
 
   $order->setSubtotal($order->getTotal() - $order->getTax() - $order->getShippingTotal());
 
+  $sessionID = '';
+
   foreach ($tx->custom_fields[0]->custom_field as $customField) {
     $fieldName = $customField->custom_field_name[0]->tagData;
     $fieldValue = $customField->custom_field_value[0]->tagData;
@@ -194,10 +200,16 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
     if ($fieldName == 'Comment') {
       $order->setComment($fieldValue);
     }
+    if ($fieldName == 'sessionID') {
+      $sessionID = $fieldValue;
+    }
   }
 
   $order->saveToDB();
+
   $osc->torchCartForCustomer($customer);   // Burn the baskets, we don't need 'em.
+  if ($sessionID)
+    $osc->torchCartInSession($sessionID);
 }
 
 print "foxy";

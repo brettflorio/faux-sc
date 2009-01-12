@@ -84,7 +84,7 @@ class OSCommerce {
   }
 
   public function updateCustomerAddresses($billing, $shipping) {
-    print ('not happening: address update not implemented.');
+    #print ('not happening: address update not implemented.');
   }
 
   public function findCountryByCode($name) {
@@ -208,6 +208,21 @@ class OSCommerce {
     $productsQuery = tep_db_query("delete from " . TABLE_CUSTOMERS_BASKET . " where customers_id = '" . (int)$customerID . "'");
 
     if (tep_session_is_registered('cartID')) tep_session_unregister('cartID');
+  }
+
+  public function torchCartInSession($sessionID) {
+    $rslt = tep_db_query("select value from " . TABLE_SESSIONS . " where sesskey =  '" . tep_db_input($sessionID) . "'");
+    if (tep_db_num_rows($rslt)) {
+      $sessionData = tep_db_fetch_array($rslt);
+
+      session_id($sessionID);
+      session_start();
+      unset($_SESSION['cart']);
+
+      tep_db_query("update " . TABLE_SESSIONS . " set value = '" . tep_db_input(session_encode()) . "' WHERE sesskey = '" . tep_db_input($sessionID) . "'");
+
+      session_unset();
+    }
   }
 }
 
@@ -484,8 +499,8 @@ $street_address\n" .
 ($suburb ? $suburb."\n" : "") .
 "$city, $state $postcode
 $country\n\n";
-    print_r($this);
-    die($emailText);
+//    print_r($this);
+//    die($emailText);
 
 
     tep_mail($this->fields['customers_firstname'] . ' ' . $order->customer['customers_lastname'], $order->customer['customers_email_address'], EMAIL_TEXT_SUBJECT, $emailText, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);

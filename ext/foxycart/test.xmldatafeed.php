@@ -61,6 +61,8 @@ $XMLOutput = <<<XML
 				<custom_field>
 					<custom_field_name>Comment</custom_field_name>
 					<custom_field_value>My order comment.</custom_field_value>
+					<custom_field_name>sessionID</custom_field_name>
+					<custom_field_value>oqegdga0ptsh73bluk20u1fb20</custom_field_value>
 				</custom_field>
 			</custom_fields>
 			<transaction_details>

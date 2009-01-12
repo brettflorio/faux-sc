@@ -34,15 +34,16 @@ function getFoxyForm() {
        foreach ($cart as $product) {
         $fieldPrefix = (($ndx++ > 0) ? $ndx.':' : '');
 ?>
-<input type="hidden" name="h:<?php echo $fieldPrefix ?>code" value="<?php echo htmlentities($product['id']) ?>"/>
+<input type="hidden" name="<?php echo $fieldPrefix ?>code" value="<?php echo htmlentities($product['id']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>name" value="<?php echo htmlentities($product['name']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>price" value="<?php echo htmlentities($product['final_price']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>weight" value="<?php echo htmlentities($product['weight']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>quantity" value="<?php echo htmlentities($product['quantity']) ?>"/>
 <?php } ?>
+    <input type="hidden" name="h:sessionID" value="<?php echo session_id() ?>"/>
     <input type="hidden" name="empty" value="true"/>
     <input type="hidden" name="cart" value="checkout"/>
-    <input type="submit" name="h:submit"/>
+    <input type="submit" name="x:submit"/>
   </form>';
 <?php
 
