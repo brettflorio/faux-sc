@@ -41,7 +41,7 @@ ext/foxycart/                    <----- copy this whole tree into your installat
 
 2. Edit @config.php@, tell Faux-sC where to find your osCommerce install and the address of your FoxyCart store.
 
-3. Copy this into the @<head>@ tag of your @checkout_process.php@ (at <a href="http://github.com/phred/fauxsc/tree/master/checkout_shipping.php#L193">@line 193@</a> for us):
+3. Copy this into the @<head>@ tag of your @checkout_process.php@ (at <a href="http://github.com/themancan/faux-sc/tree/master/checkout_shipping.php#L195">@line 195@</a> for us):
 
 <code syntax="php"><pre>
 <?php
@@ -51,16 +51,34 @@ include('ext/foxycart/checkoutReplacement.php');
 ?>
 </pre></code>
 
-4. Edit @checkoutReplacement.php@, change the message that displays to customers when they're directed to FoxyCart.
+4. Copy this into the top block of code your @account.php@, right below the line that requires the language file (at <a href="http://github.com/themancan/faux-sc/tree/master/account.php#L22">@line 22@</a> for us):
+<code syntax="php"><pre>
+<?php
+//---- BEGIN FAUXSC HIJACK --//
+include('ext/foxycart/emptyBasket.php');
+//---- END FAUXSC HIJACK ----//
+?>
+</pre></code>
 
-5. Set your FoxyCart Store's datafeed to point to, for example:
+5. Edit @checkoutReplacement.php@, change the message that displays to customers when they're directed to FoxyCart.
+
+6. Set your FoxyCart Store's datafeed to point to, for example:
 http://www.yourstore.com/ext/foxycart/fc-oscommerce.php
 
-6. You may want to turn off your store's emails in FoxyCart: Faux-sC will send out osCommerce-like emails whenever a new order is placed.
+7. You may want to turn off your store's emails in FoxyCart: Faux-sC will send out osCommerce-like emails whenever a new order is placed.
 
-7. Test.
+8. For best user experience, we recommend editing your FoxyCart receipt template and replacing the default "Continue" button with one that directs the customer back to their account page on your site as follows:
+<code syntax="html"><pre>
+http://www.yoursite.com/account.php?checkout_complete=1
+</pre></code>
 
-8. Once you're happy with the checkout process, go ahead and turn off those notoriously PCI-breaking osCommerce payment modules -- such as the plain Credit Card, Authorize.net, etc.  You may want to leave standard PayPal on as, at the time of this writing, FoxyCart does not support standard PayPal.
+Setting @?checkout_complete=1@ triggers the bit of code we added to account.php which empties the customer's shopping cart before showing their account page.  We think it makes sense to send people to their account page, but you may think differently -- just move the code in step 4 to the top of that file.
+
+Note that if the customer never clicks the continue link on their receipt, their shopping cart will automatically empty when FoxyCart updates the store's datafeed: usually within a minute of when they place their order.
+
+9. Test.
+
+10. Once you're happy with the checkout process, go ahead and turn off those notoriously PCI-breaking osCommerce payment modules -- such as the plain Credit Card, Authorize.net, etc.  You may want to leave standard PayPal on as, at the time of this writing, FoxyCart does not support standard PayPal.
 
 
 How it Works
@@ -70,17 +88,19 @@ We assume that you are still using osCommerce for your main catalog and its basi
 
 Once they hit the shipping page, they're immediately presented with an overlay on the page that asks: do you want Expedited Checkout or Standard?  (The message is intentionally lame -- please write a clear explanation for your customers).  Note that the main reason we did this instead of just redirecting to Foxycart is for PayPal Standard; in the future, whether to redirect or ask will likely be an option in config.php.
 
-OK, so, the customer chooses "expedited" and they're taken right to FoxyCart.  The "expedited" link was actually wrapped up in a form that creates a shopping cart in FoxyCart whose contents match the osCommerce basket.
+OK, so: the customer chooses "expedited" and they're taken right to FoxyCart.  The "expedited" link was actually wrapped up in a form that creates a shopping cart in FoxyCart whose contents match the osCommerce basket.
 
-The customer must now log in to FoxyCart, fill in their address and card information, and complete their order.  In the future, FoxyCart will likely have an API for two-way synchronization of user address information; however, at the moment, a customer who has checked out through osCommerce must enter their address information anew the first time through the FoxyCart checkout.
+The customer must now log in to FoxyCart, fill in their address and card information, and complete their order.  In the future, FoxyCart will likely have an API for two-way synchronization of user address information; however, at the moment, a customer who has checked out through osCommerce but not through FoxyCart must enter their address information anew the first time through the FoxyCart checkout.
 
-Once the customer has confirmed the order, FoxyCart sends the order information back to fc-datafeed.php, which does the following:
+Once the customer has confirmed the order, the FoxyCart store datafeed sends the order information back to fc-datafeed.php, which does the following:
 
 1. Creates an osCommerce account for the customer if they don't have one.  If they do, updates their address information in osCommerce.
 
 2. Creates an order from osCommerce's stored shopping cart contents.
 
 3. Sends an osCommerce order email out to the customer.
+
+4. Empty the customer's saved and current baskets.
 
 
 
@@ -95,4 +115,4 @@ Also, we will always use the English content for the order email, defined in osC
 Notes
 =====
 
-The OSCommerce class is designed to be usable outside of Faux-sC.  Use it for good, not evil, and free data from the clutches of osCommerce.
+The @OSCommerce@ class is designed to be usable outside of Faux-sC.  Use it for good, not evil, and free data from the clutches of osCommerce.

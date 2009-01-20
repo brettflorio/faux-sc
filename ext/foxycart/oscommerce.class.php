@@ -45,6 +45,23 @@ class OSCommerce {
     return new OSCommerce_Order($this, $customer);
   }
 
+  //
+  // If called on an osCommerce page, will return an array with the current
+  // customer's information.
+  //
+  public function findCurrentCustomer() {
+    global $customer_id;  // Set by the osCommerce code.
+
+    if ($customer_id) {
+      $result = tep_db_query('SELECT * FROM ' . TABLE_CUSTOMERS .
+        ' WHERE customers_id = "'.tep_db_prepare_input($customer_id).'"');
+
+      return (tep_db_num_rows($result) > 0) ? tep_db_fetch_array($result) : null;
+    }
+
+    return null;
+  }
+
   public function findCustomer($customerEmail) {
     $result = tep_db_query('SELECT * FROM ' . TABLE_CUSTOMERS .
       ' WHERE customers_email_address = "'.tep_db_prepare_input($customerEmail).'"');
@@ -220,8 +237,6 @@ class OSCommerce {
       unset($_SESSION['cart']);
 
       tep_db_query("update " . TABLE_SESSIONS . " set value = '" . tep_db_input(session_encode()) . "' WHERE sesskey = '" . tep_db_input($sessionID) . "'");
-
-      session_unset();
     }
   }
 }
