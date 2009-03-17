@@ -183,8 +183,6 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
   $order->setPaymentMethod('foxycart');
   $order->setDatePurchased($trans->transaction_date);
 
-  $order->setProducts($osc->loadCartForCustomer($customer));
-
   $order->setTax($trans->tax_total);
   $order->setShippingTotal($trans->shipping_total);
   $order->setTotal($trans->order_total);
@@ -202,6 +200,9 @@ foreach ($data->document->transactions[0]->transaction as $tx) {
     }
     if ($fieldName == 'sessionID') {
       $sessionID = $fieldValue;
+    }
+    if ($fieldName == 'basket') {
+      $order->setProducts($osc->loadCartFromString($fieldValue));
     }
   }
 

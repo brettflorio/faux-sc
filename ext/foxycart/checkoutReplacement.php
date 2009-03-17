@@ -40,6 +40,7 @@ function getFoxyForm() {
 <input type="hidden" name="<?php echo $fieldPrefix ?>weight" value="<?php echo htmlentities($product['weight']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>quantity" value="<?php echo htmlentities($product['quantity']) ?>"/>
 <?php } ?>
+    <input type="hidden" name="h:basket" value="<?php echo $osc->saveCartToString($cart) ?>"/>
     <input type="hidden" name="h:sessionID" value="<?php echo session_id() ?>"/>
     <input type="hidden" name="empty" value="true"/>
     <input type="hidden" name="cart" value="checkout"/>

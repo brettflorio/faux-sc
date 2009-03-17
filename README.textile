@@ -55,7 +55,7 @@ include('ext/foxycart/checkoutReplacement.php');
 <code syntax="php"><pre>
 <?php
 //---- BEGIN FAUXSC HIJACK --//
-include('ext/foxycart/emptyBasket.php');
+include('ext/foxycart/emptyCart.php');
 //---- END FAUXSC HIJACK ----//
 ?>
 </pre></code>

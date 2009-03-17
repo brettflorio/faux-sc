@@ -130,6 +130,22 @@ class OSCommerce {
   }
 
   /**
+   * Given the cart contents returned by loadCartForCustomer, serialize them and
+   * store them in a compressed Base64-encoded string.
+   */
+  public function saveCartToString($cart) {
+    return base64_encode(gzcompress(serialize($cart)));
+  }
+
+  /**
+   * Given a string produced by saveCartToString, return an associative array of
+   * cart contents.
+   */
+  public function loadCartFromString($str) {
+    return unserialize(gzuncompress(base64_decode($str)));
+  }
+
+  /**
    * Creates a hash of a given customer's stored cart in osCommerce.  Returns a hash
    * of the products in a customer's cart structured as follows:
    *
