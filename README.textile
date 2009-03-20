@@ -1,21 +1,20 @@
 
-Faux-sC
-------
+h1. Faux-sC
+
 
 Sneaking FoxyCart through the system.  A straightforward-to-install modification to osCommerce that directs the osCommerce checkout through FoxyCart.
 
 Why, might you ask, would I want that in my osCommerce store?  Simple: "PCI Compliance":http://en.wikipedia.org/wiki/Payment_card_industry -- you don't really want the burden of keeping your customers' credit card numbers on file, do you?
 
 
-Download
-========
+h2. Download
+
 "The latest, as a zip archive":http://github.com/themancan/faux-sc/zipball/master
 
 "The latest, as a compressed tarball":http://github.com/themancan/faux-sc/tarball/master
 
 
-Installation
-============
+h2. Installation
 
 Extract the downloaded archive.  Now you've got the following files:
 
@@ -39,7 +38,7 @@ ext/foxycart/                    <----- copy this whole tree into your installat
 
 1. Copy the @ext/foxycart@ folder into the @ext@ folder of your osCommerce installation.
 
-2. Edit @config.php@, tell Faux-sC where to find your osCommerce install and the address of your FoxyCart store.
+2. Edit @config.php@, tell Faux-sC where to find your osCommerce install and the address of your FoxyCart store.  If you offer free shipping on some products by setting their weight to 0, enable that section of @config.php@.
 
 3. Copy this into the @<head>@ tag of your @checkout_process.php@ (at <a href="http://github.com/themancan/faux-sc/tree/master/checkout_shipping.php#L195">@line 195@</a> for us):
 
@@ -81,8 +80,8 @@ Note that if the customer never clicks the continue link on their receipt, their
 10. Once you're happy with the checkout process, go ahead and turn off those notoriously PCI-breaking osCommerce payment modules -- such as the plain Credit Card, Authorize.net, etc.  You may want to leave standard PayPal on as, at the time of this writing, FoxyCart does not support standard PayPal.
 
 
-How it Works
-============
+h2. How it Works
+
 
 We assume that you are still using osCommerce for your main catalog and its basic shopping cart.  Up until the customer has arrived at the "shipping options" page (@checkout_shipping.php@), the checkout process remains the same as usual: add to cart, update cart, checkout, login or create account.
 
@@ -104,15 +103,13 @@ Once the customer has confirmed the order, the FoxyCart store datafeed sends the
 
 
 
-Caveats
-=======
+h2. Caveats
 
 We don't support any of osCommerce's internationalization features -- when the customer checks out with FoxyCart, we have osCommerce always send the English descriptions of the products in the cart.  At the moment, FoxyCart itself doesn't support more than one language per store, until that's changed we're going to leave i18n alone.
 
 Also, we will always use the English content for the order email, defined in osCommerce's @includes/languages/english/checkout_process.php@.  We also use a standard US address format in the receipt email that's hardcoded into our OSCommerce interoperability class.
 
 
-Notes
-=====
+h2. Notes
 
 The @OSCommerce@ class is designed to be usable outside of Faux-sC.  Use it for good, not evil, and free data from the clutches of osCommerce.

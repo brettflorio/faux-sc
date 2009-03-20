@@ -33,12 +33,15 @@ function getFoxyForm() {
 <?php  $ndx = 0;
        foreach ($cart as $product) {
         $fieldPrefix = (($ndx++ > 0) ? $ndx.':' : '');
+        $freeShipping = (defined('USE_FREE_SHIPPING') && $product['weight'] == 0);
+        $category = ($freeShipping ? PRODUCT_FREE_SHIPPING_CATEGORY : PRODUCT_CATEGORY);
 ?>
 <input type="hidden" name="<?php echo $fieldPrefix ?>code" value="<?php echo htmlentities($product['id']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>name" value="<?php echo htmlentities($product['name']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>price" value="<?php echo htmlentities($product['final_price']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>weight" value="<?php echo htmlentities($product['weight']) ?>"/>
 <input type="hidden" name="<?php echo $fieldPrefix ?>quantity" value="<?php echo htmlentities($product['quantity']) ?>"/>
+<input type="hidden" name="<?php echo $fieldPrefix ?>category" value="<?php echo htmlentities($category) ?>"/>
 <?php } ?>
     <input type="hidden" name="h:basket" value="<?php echo $osc->saveCartToString($cart) ?>"/>
     <input type="hidden" name="h:sessionID" value="<?php echo session_id() ?>"/>
