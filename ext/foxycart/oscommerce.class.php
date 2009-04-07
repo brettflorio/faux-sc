@@ -534,7 +534,7 @@ $country\n\n";
 //    die($emailText);
 
 
-    tep_mail($this->fields['customers_firstname'] . ' ' . $order->customer['customers_lastname'], $order->customer['customers_email_address'], EMAIL_TEXT_SUBJECT, $emailText, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
+    tep_mail($this->fields['customers_firstname'] . ' ' . $this->fields['customers_lastname'], $this->fields['customers_email_address'], EMAIL_TEXT_SUBJECT, $emailText, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
 
     if (SEND_EXTRA_ORDER_EMAILS_TO != '') {
       tep_mail('', SEND_EXTRA_ORDER_EMAILS_TO, EMAIL_TEXT_SUBJECT, $emailText, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
